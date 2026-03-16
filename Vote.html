@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body { font-family: 'Arial', sans-serif; background-color: #f4f7f6; padding: 20px; color: #333; }
+      .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+      h2 { color: #2c3e50; text-align: center; }
+      .section { display: none; margin-top: 20px; }
+      .active { display: block; }
+      input[type="text"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+      button { background-color: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; width: 100%; }
+      button:hover { background-color: #2980b9; }
+      .btn-danger { background-color: #e74c3c; }
+      .btn-danger:hover { background-color: #c0392b; }
+      table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+      th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
+      th { background-color: #f2f2f2; }
+      .theme-title { text-align: left; font-weight: bold; }
+      select { padding: 8px; width: 100%; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>DIDO品管圈 - 主題選定投票</h2>
+      
+      <div id="step1" class="section active">
+        <h3>請輸入您的姓名</h3>
+        <input type="text" id="voterName" placeholder="例如：王小明">
+        <button onclick="startVoting()">開始投票</button>
+        <hr style="margin-top:40px;">
+        <button class="btn-danger" onclick="endVoting()">關閉投票並結算總分 (管理員專用)</button>
+      </div>
+
+      <div id="step2" class="section">
+        <p>請針對三個主題進行評分。同一評價項目（迫切性、重要性、可行性）中，三個主題必須分別給予 <b>5分、3分、1分</b>，不可重複。</p>
+        <form id="voteForm">
+          <table>
+            <tr>
+              <th>主題</th>
+              <th>迫切性</th>
+              <th>重要性</th>
+              <th>可行性</th>
+            </tr>
+            <tr>
+              <td class="theme-title">1. 提升腦中風取栓轉入轉出時間 DIDO小於 120 分鐘... / 傅傳修</td>
+              <td><select class="u-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
+              <td><select class="i-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
+              <td><select class="f-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
+            </tr>
+            <tr>
+              <td class="theme-title">2. 提升Minor stroke/TIA病人使用DAPT的執行率 / 鄭雅文</td>
+              <td><select class="u-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
+              <td><select class="i-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
+              <td><select class="f-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
+            </tr>
+            <tr>
+              <td class="theme-title">3. 提升Door to CTA小於60分鐘達標率 / 謝沛峰</td>
+              <td><select class="u-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
+              <td><select class="i-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
+              <td><select class="f-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
+            </tr>
+          </table>
+          <button type="button" onclick="submitVote()">送出評分</button>
+        </form>
+      </div>
+
+      <div id="step3" class="section">
+        <h3>投票結果總結算</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>排名</th>
+              <th>主題</th>
+              <th>迫切性</th>
+              <th>重要性</th>
+              <th>可行性</th>
+              <th>總分</th>
+            </tr>
+          </thead>
+          <tbody id="resultBody">
+            </tbody>
+        </table>
+        <button onclick="location.reload()">返回首頁</button>
+      </div>
+    </div>
+
+    <script>
+      let currentName = '';
+
+      function startVoting() {
+        const name = document.getElementById('voterName').value.trim();
+        if (!name) {
+          alert("請輸入您的姓名！");
+          return;
+        }
+        currentName = name;
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step2').classList.add('active');
+      }
+
+      function checkUniqueness(className) {
+        const selects = document.querySelectorAll('.' + className);
+        let values = [];
+        for (let sel of selects) {
+          if (sel.value === "") return false; // 尚未填完
+          if (values.includes(sel.value)) return false; // 有重複
+          values.push(sel.value);
+        }
+        return true;
+      }
+
+      function submitVote() {
+        if (!checkUniqueness('u-score')) { alert("【迫切性】的評分必須是 5, 3, 1 各一次，不可重複或遺漏！"); return; }
+        if (!checkUniqueness('i-score')) { alert("【重要性】的評分必須是 5, 3, 1 各一次，不可重複或遺漏！"); return; }
+        if (!checkUniqueness('f-score')) { alert("【可行性】的評分必須是 5, 3, 1 各一次，不可重複或遺漏！"); return; }
+
+        const uScores = document.querySelectorAll('.u-score');
+        const iScores = document.querySelectorAll('.i-score');
+        const fScores = document.querySelectorAll('.f-score');
+
+        let voteData = [];
+        for (let i = 0; i < 3; i++) {
+          voteData.push({
+            u: uScores[i].value,
+            i: iScores[i].value,
+            f: fScores[i].value
+          });
+        }
+
+        const btn = document.querySelector('button[onclick="submitVote()"]');
+        btn.innerText = "資料傳送中...";
+        btn.disabled = true;
+
+        google.script.run.withSuccessHandler(function(msg) {
+          alert(msg);
+          location.reload(); // 投完票後重新整理，讓下一個人投
+        }).submitVote(currentName, voteData);
+      }
+
+      function endVoting() {
+        if(!confirm("確定要結束投票並進行總分結算嗎？這將會更新試算表的第四個分頁。")) return;
+        
+        document.getElementById('step1').classList.remove('active');
+        document.getElementById('step3').classList.add('active');
+        document.getElementById('resultBody').innerHTML = "<tr><td colspan='6'>正在計算中，請稍候...</td></tr>";
+
+        google.script.run.withSuccessHandler(function(results) {
+          let html = "";
+          results.forEach((res, index) => {
+            html += `<tr>
+              <td>${index + 1}</td>
+              <td class="theme-title">${res.theme}</td>
+              <td>${res.u}</td>
+              <td>${res.i}</td>
+              <td>${res.f}</td>
+              <td><strong>${res.total}</strong></td>
+            </tr>`;
+          });
+          document.getElementById('resultBody').innerHTML = html;
+        }).calculateResults();
+      }
+    </script>
+  </body>
+</html>
