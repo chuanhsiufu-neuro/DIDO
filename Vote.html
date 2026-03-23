@@ -11,13 +11,14 @@
       input[type="text"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
       button { background-color: #3498db; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-top: 10px; width: 100%; }
       button:hover { background-color: #2980b9; }
-      .btn-danger { background-color: #e74c3c; }
+      .btn-danger { background-color: #e74c3c; margin-top: 30px;}
       .btn-danger:hover { background-color: #c0392b; }
       table { width: 100%; border-collapse: collapse; margin-top: 20px; }
       th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
       th { background-color: #f2f2f2; }
       .theme-title { text-align: left; font-weight: bold; }
-      select { padding: 8px; width: 100%; }
+      select { padding: 8px; width: 100%; cursor: pointer; }
+      select option:disabled { background-color: #e0e0e0; color: #a0a0a0; }
     </style>
   </head>
   <body>
@@ -33,7 +34,7 @@
       </div>
 
       <div id="step2" class="section">
-        <p>請針對三個主題進行評分。同一評價項目（迫切性、重要性、可行性）中，三個主題必須分別給予 <b>5分、3分、1分</b>，不可重複。</p>
+        <p style="color: #c0392b; font-weight: bold;">※ 請針對三個主題進行評分。同一評價項目中，三個主題必須分別給予 5分、3分、1分，分數選過即無法重複選取。</p>
         <form id="voteForm">
           <table>
             <tr>
@@ -55,7 +56,7 @@
               <td><select class="f-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
             </tr>
             <tr>
-              <td class="theme-title">3. 提升Door to CTA小於60分鐘達標率 / 謝沛峰</td>
+              <td class="theme-title">3. 減少中風病人30天內中風復發比率 / 謝沛峰</td>
               <td><select class="u-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
               <td><select class="i-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
               <td><select class="f-score"><option value="">選擇</option><option value="5">5</option><option value="3">3</option><option value="1">1</option></select></td>
@@ -88,6 +89,44 @@
     <script>
       let currentName = '';
 
+      document.addEventListener("DOMContentLoaded", function() {
+        bindSelectEvents('u-score');
+        bindSelectEvents('i-score');
+        bindSelectEvents('f-score');
+      });
+
+      function bindSelectEvents(className) {
+        const selects = document.querySelectorAll('.' + className);
+        selects.forEach(select => {
+          select.addEventListener('change', function() {
+            updateOptions(className);
+          });
+        });
+      }
+
+      function updateOptions(className) {
+        const selects = document.querySelectorAll('.' + className);
+        let selectedValues = [];
+        selects.forEach(sel => {
+          if (sel.value !== "") selectedValues.push(sel.value);
+        });
+
+        selects.forEach(sel => {
+          const options = sel.querySelectorAll('option');
+          options.forEach(opt => {
+            if (opt.value === "") return; 
+            
+            if (selectedValues.includes(opt.value) && sel.value !== opt.value) {
+              opt.disabled = true;
+              opt.style.display = 'none';
+            } else {
+              opt.disabled = false;
+              opt.style.display = 'block';
+            }
+          });
+        });
+      }
+
       function startVoting() {
         const name = document.getElementById('voterName').value.trim();
         if (!name) {
@@ -99,21 +138,18 @@
         document.getElementById('step2').classList.add('active');
       }
 
-      function checkUniqueness(className) {
+      function checkCompletion(className) {
         const selects = document.querySelectorAll('.' + className);
-        let values = [];
         for (let sel of selects) {
-          if (sel.value === "") return false; // 尚未填完
-          if (values.includes(sel.value)) return false; // 有重複
-          values.push(sel.value);
+          if (sel.value === "") return false; 
         }
         return true;
       }
 
       function submitVote() {
-        if (!checkUniqueness('u-score')) { alert("【迫切性】的評分必須是 5, 3, 1 各一次，不可重複或遺漏！"); return; }
-        if (!checkUniqueness('i-score')) { alert("【重要性】的評分必須是 5, 3, 1 各一次，不可重複或遺漏！"); return; }
-        if (!checkUniqueness('f-score')) { alert("【可行性】的評分必須是 5, 3, 1 各一次，不可重複或遺漏！"); return; }
+        if (!checkCompletion('u-score')) { alert("【迫切性】尚未評分完畢！"); return; }
+        if (!checkCompletion('i-score')) { alert("【重要性】尚未評分完畢！"); return; }
+        if (!checkCompletion('f-score')) { alert("【可行性】尚未評分完畢！"); return; }
 
         const uScores = document.querySelectorAll('.u-score');
         const iScores = document.querySelectorAll('.i-score');
@@ -134,7 +170,7 @@
 
         google.script.run.withSuccessHandler(function(msg) {
           alert(msg);
-          location.reload(); // 投完票後重新整理，讓下一個人投
+          location.reload(); 
         }).submitVote(currentName, voteData);
       }
 
